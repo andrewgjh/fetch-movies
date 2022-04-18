@@ -1,24 +1,68 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useCallback } from "react";
+
+import MoviesList from "./components/MoviesList";
+import "./App.css";
 
 function App() {
+  const [movies, setMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchMoviesHandler = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch("https://swapi.dev/api/films/");
+      if (!response.ok) {
+        throw new Error("Something went wrong");
+      }
+      const data = await response.json();
+
+      const transformData = data.results.map(movie => {
+        return {
+          id: movie.episode_id,
+          title: movie.title,
+          openingText: movie.opening_crawl,
+          releaseData: movie.released_date,
+        };
+      });
+      setMovies(transformData);
+      setIsLoading(false);
+    } catch (error) {
+      setError(error.message);
+    }
+    setIsLoading(false);
+  }, []);
+  useEffect(() => {
+    fetchMoviesHandler();
+  }, [fetchMoviesHandler]);
+  // const dummyMovies = [
+  //   {
+  //     id: 1,
+  //     title: "Some Dummy Movie",
+  //     openingText: "This is the opening text of the movie",
+  //     releaseDate: "2021-05-18",
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "Some Dummy Movie 2",
+  //     openingText: "This is the second opening text of the movie",
+  //     releaseDate: "2021-05-19",
+  //   },
+  // ];
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <React.Fragment>
+      <section>
+        <button onClick={fetchMoviesHandler}>Fetch Movies</button>
+      </section>
+      <section>
+        {!isLoading && movies.length > 0 && <MoviesList movies={movies} />}
+        {!isLoading && movies.length === 0 && !error && <p>Found No Movies</p>}
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && error && <p>{error}</p>}
+      </section>
+    </React.Fragment>
   );
 }
 
